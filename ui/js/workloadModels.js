@@ -33,7 +33,16 @@ patWorkload = function(){
 		html: "<span class='glyphicon glyphicon-plus-sign'></span> cf:push",
 		requires: [],
 		requiredBy: [],
-		args: [],
+		args: ["app", "manifest"],
+		click: workloadClick
+	}
+
+	var cfGenerateAndPush = {
+		name: "cf:generateAndPush",
+		html: "<span class='glyphicon glyphicon-plus-sign'></span> cf:generateAndPush",
+		requires: [],
+		requiredBy: [],
+		args: ["app", "manifest"],
 		click: workloadClick
 	}
 
@@ -97,6 +106,25 @@ patWorkload = function(){
  		regex: /^[a-zA-Z0-9-_,]+$/,
  		requiredBy: ["rest:login"]
  	}
+
+	var cfApp =
+ 	{	argName: "App Filepath",
+ 		forCmd: "app",
+ 		value: ko.observable("assets/dora"),
+ 		display: ko.observable("none"),
+ 		regex: /^[a-zA-Z0-9-_,\/\.]+$/,
+ 		requiredBy: ["cf:push", "cf:generateAndPush"]
+ 	}
+
+	var cfManifest =
+ 	{	argName: "Manifest Filepath",
+ 		forCmd: "manifest",
+ 		value: ko.observable(""),
+ 		display: ko.observable("none"),
+ 		regex: /^[a-zA-Z0-9-_,\/\.]+$/,
+ 		requiredBy: ["cf:push", "cf:generateAndPush"]
+ 	}
+
 
 	function workloadClick() {
 		var self = this
@@ -225,6 +253,20 @@ patWorkload = function(){
  		return !(cfSpace.regex.test(value))
  	}
 
+	function isAppError() {
+ 		if (cfApp.display() == "none") return false;
+ 		var value = cfApp.value();
+ 		if (value.trim() == "") return true;
+ 		return !(cfApp.regex.test(value))
+ 	}
+
+	function isManifestError() {
+ 		if (cfManifest.display() == "none") return false;
+ 		var value = cfManifest.value();
+ 		if (value.trim() == "") return false;
+ 		return !(cfManifest.regex.test(value))
+ 	}
+
 	var workloadStr = ko.observable("");
 	var worklistHasError = ko.computed( function() {
 			return (workloadStr() == "")
@@ -235,16 +277,18 @@ patWorkload = function(){
  	cfUser.errCheckFn = ko.computed( isUsernameError )
  	cfPass.errCheckFn = ko.computed( isPasswordError )
  	cfSpace.errCheckFn = ko.computed( isSpaceError )
+ 	cfApp.errCheckFn = ko.computed( isAppError )
+ 	cfManifest.errCheckFn = ko.computed( isManifestError )
 
  	var validation = {} 	
  	validation.HasError = function() {
- 		return (cfTarget.errCheckFn() || cfUser.errCheckFn() || cfPass.errCheckFn() || cfSpace.errCheckFn() || worklistHasError())
+ 		return (cfTarget.errCheckFn() || cfUser.errCheckFn() || cfPass.errCheckFn() || cfSpace.errCheckFn() || cfApp.errCheckFn() || cfManifest.errCheckFn() || worklistHasError())
  	}
 
 	// construct models
-	var availableCmds = ko.observableArray([restTarget, restLogin, restPush, cfPush, dummy, dummyWithErrors])
+	var availableCmds = ko.observableArray([restTarget, restLogin, restPush, cfPush, cfGenerateAndPush, dummy, dummyWithErrors])
 	var selectedCmds = ko.observableArray([])
-	var reqArguments = ko.observableArray([cfTarget, cfUser, cfPass, cfSpace]);
+	var reqArguments = ko.observableArray([cfTarget, cfUser, cfPass, cfSpace, cfApp, cfManifest]);
 
 	var showSelectedCaption = ko.computed(function(){
 		if (selectedCmds().length > 0) {
@@ -266,13 +310,15 @@ patWorkload = function(){
 		availableCmds: availableCmds,
 		selectedCmds: selectedCmds,
 		shouldShowSelectedCaption: showSelectedCaption,
-		shouldShowArgumentCaption: showArgumentCaption,		
+		shouldShowArgumentCaption: showArgumentCaption,
 		reqArguments: reqArguments,
 		validation: validation,
 		cfTarget: reqArguments()[0].value,
 		cfUsername: reqArguments()[1].value,
 		cfPassword: reqArguments()[2].value,
-		cfSpace: reqArguments()[3].value
+		cfSpace: reqArguments()[3].value,
+		cfApp: reqArguments()[4].value,
+		cfManifest: reqArguments()[5].value
 	}
 	
 }

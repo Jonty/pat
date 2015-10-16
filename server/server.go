@@ -140,6 +140,8 @@ func (ctx *serverContext) handlePush(w http.ResponseWriter, r *http.Request) (in
 	}
 
 	workloadContext := context.New()
+	workloadContext.PutString("app", r.FormValue("cfApp"))
+	workloadContext.PutString("app:manifest", r.FormValue("cfManifest"))
 	workloads.PopulateRestContext(r.FormValue("cfTarget"), r.FormValue("cfUsername"), r.FormValue("cfPassword"), r.FormValue("cfSpace"), workloadContext)
 
 	experiment, _ := ctx.lab.Run(
